@@ -243,7 +243,6 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
                     break;
             }
             end_vertices[i] = end_vertex;
-            //std::printf("process %d: end_vertices[%d] = %d\n", world_rank, i, end_vertices[i]);
         }
     }
     
@@ -265,7 +264,6 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
         communication_timer.start();
 
         // if P is root process
-        //PageRankType *global_sub_pr_next = NULL;
         uintV sub_start = 0;
         uintV sub_end = end_vertices[0];
 
@@ -274,16 +272,10 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
         PageRankType *sub_pr_next = new PageRankType[n];
 
         for(int i = 0; i < world_size; i++){
-            //std::printf("process %d: sub_start = %d, sub_end = %d\n", world_rank, sub_start, sub_end);
-
             int j = 0;
-            for(uintV i = sub_start; i < sub_end; i++){
-                sub_pr_next[j] = pr_next[i];
-                j++;
-            }
-            //std::printf("process %d: len = %d\n", world_rank, len);
+            std::copy(&pr_next[sub_start], &pr_next[sub_end], sub_pr_next);
+            
             MPI_Reduce(sub_pr_next, global_sub_pr_next, len, PAGERANK_MPI_TYPE, MPI_SUM, i, MPI_COMM_WORLD);
-            //std::printf("process %d: global_sub_pr_next = " PR_FMT "\n", world_rank, global_sub_pr_next[0]);
 
             int k = 0;
             for(uintV i = sub_start; i < sub_end; i++){

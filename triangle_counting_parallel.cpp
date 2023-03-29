@@ -62,8 +62,8 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
   // Each process will work on vertices [start_vertex, end_vertex).
 
   // Each process calculates its local triangle count
-  int local_count = 0;
-  int local_edge_count = 0;
+  long local_count = 0;
+  long local_edge_count = 0;
 
   for (uintV u = start_vertex; u < end_vertex; u++) {
     uintE out_degree = g.vertices_[u].getOutDegree();
@@ -82,14 +82,14 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
   communication_timer.start();
 
   // if P is root process
-  int *local_counts = NULL;
+  long *local_counts = NULL;
   if(world_rank == 0){
-    local_counts = (int*)malloc(sizeof(int) * world_size);
+    local_counts = (long*)malloc(sizeof(long) * world_size);
   }
 
-  MPI_Gather(&local_count, 1, MPI_INT, local_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(&local_count, 1, MPI_LONG, local_counts, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
-  int global_count = 0;
+  long global_count = 0;
   if(world_rank == 0){
     for(int i = 0; i < world_size; i++){
       global_count += local_counts[i];
@@ -107,15 +107,15 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
       // print process statistics and other results
       std::printf("rank, edges, triangle_count, communication_time\n");
 
-      std::printf("%d, %d, %d, %f\n", world_rank, local_edge_count, local_count, communication_time);
+      std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
 
-      std::printf("Number of triangles : %d\n", global_count);
-      std::printf("Number of unique triangles : %d\n", global_count / 3);
+      std::printf("Number of triangles : %ld\n", global_count);
+      std::printf("Number of unique triangles : %ld\n", global_count / 3);
       std::printf("Time taken (in seconds) : %f\n", exec_time);
   }
   else{
     // print process statistics
-    std::printf("%d, %d, %d, %f\n", world_rank, local_edge_count, local_count, communication_time);
+    std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
   }
   MPI_Finalize();
 }
@@ -152,8 +152,8 @@ void triangleCountReduce(Graph &g, int world_rank, int world_size){
   // Each process will work on vertices [start_vertex, end_vertex).
 
   // Each process calculates its local triangle count
-  int local_count = 0;
-  int local_edge_count = 0;
+  long local_count = 0;
+  long local_edge_count = 0;
 
   for (uintV u = start_vertex; u < end_vertex; u++) {
     uintE out_degree = g.vertices_[u].getOutDegree();
@@ -171,8 +171,8 @@ void triangleCountReduce(Graph &g, int world_rank, int world_size){
 
   communication_timer.start();
 
-  int global_count;
-  MPI_Reduce(&local_count, &global_count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  long global_count;
+  MPI_Reduce(&local_count, &global_count, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
   communication_time = communication_timer.stop();
 
@@ -184,15 +184,15 @@ void triangleCountReduce(Graph &g, int world_rank, int world_size){
       // print process statistics and other results
       std::printf("rank, edges, triangle_count, communication_time\n");
 
-      std::printf("%d, %d, %d, %f\n", world_rank, local_edge_count, local_count, communication_time);
+      std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
 
-      std::printf("Number of triangles : %d\n", global_count);
-      std::printf("Number of unique triangles : %d\n", global_count / 3);
+      std::printf("Number of triangles : %ld\n", global_count);
+      std::printf("Number of unique triangles : %ld\n", global_count / 3);
       std::printf("Time taken (in seconds) : %f\n", exec_time);
   }
   else{
     // print process statistics
-    std::printf("%d, %d, %d, %f\n", world_rank, local_edge_count, local_count, communication_time);
+    std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
   }
   MPI_Finalize();
 }
