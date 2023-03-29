@@ -108,7 +108,9 @@ void pageRankS1(Graph &g, int max_iters, int world_rank, int world_size){
         int *displs = NULL;
 
         if(world_rank == 0){
-            pr_next = global_pr_next;
+            for(int i = 0; i < n; i++){
+                pr_next[i] = global_pr_next[i];
+            }
             sendcounts = (int*)malloc(sizeof(int) * world_size);
             displs = (int*)malloc(sizeof(int) * world_size);
             uintV sub_start = 0;
@@ -128,16 +130,13 @@ void pageRankS1(Graph &g, int max_iters, int world_rank, int world_size){
         } 
 
         uintV len = end_vertex - start_vertex;
-        PageRankType *sub_pr_next = (PageRankType*)malloc(sizeof(PageRankType) * len);
+        PageRankType *sub_pr_next = new PageRankType[len];
         MPI_Scatterv(pr_next, sendcounts, displs, PAGERANK_MPI_TYPE, sub_pr_next, len, PAGERANK_MPI_TYPE, 0, MPI_COMM_WORLD);
         uintV j = 0;
         for (uintV u = start_vertex; u < end_vertex; u++) {
             pr_next[u] = sub_pr_next[j];
             j++;
         }
-        free(sub_pr_next);
-        free(sendcounts);
-        free(displs);
         communication_time += communication_timer.stop();
         
         for (uintV v = start_vertex; v < end_vertex; v++) {
@@ -150,11 +149,24 @@ void pageRankS1(Graph &g, int max_iters, int world_rank, int world_size){
         for (uintV v = 0; v < n; v++) {
             pr_next[v] = 0.0;
         }
+
+        if(world_rank == 0){
+            free(sendcounts);
+            free(displs);
+            delete[] global_pr_next;
+        }
+        delete[] sub_pr_next;
     }
 
     PageRankType local_sum = 0.0;
     for (uintV v = start_vertex; v < end_vertex; v++) {  // Loop 3
         local_sum += pr_curr[v];
+    }
+
+    delete[] pr_curr;
+    delete[] pr_next;
+    if(world_rank == 0){
+        delete[] end_vertices;
     }
 
     PageRankType global_sum;
@@ -256,12 +268,13 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
         //PageRankType *global_sub_pr_next = NULL;
         uintV sub_start = 0;
         uintV sub_end = end_vertices[0];
-        
+
+        uintV len = sub_end - sub_start;
+        PageRankType *global_sub_pr_next = new PageRankType[n];
+        PageRankType *sub_pr_next = new PageRankType[n];
+
         for(int i = 0; i < world_size; i++){
-            uintV len = sub_end - sub_start;
             //std::printf("process %d: sub_start = %d, sub_end = %d\n", world_rank, sub_start, sub_end);
-            PageRankType *global_sub_pr_next = new PageRankType[len];
-            PageRankType *sub_pr_next = new PageRankType[len];
 
             int j = 0;
             for(uintV i = sub_start; i < sub_end; i++){
@@ -284,6 +297,9 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
             sub_end = end_vertices[i + 1];
             len = sub_end - sub_start;
         }
+        
+        delete[] global_sub_pr_next;
+        delete[] sub_pr_next;
         communication_time += communication_timer.stop();
         
         for (uintV v = start_vertex; v < end_vertex; v++) {
@@ -305,6 +321,10 @@ void pageRankS2(Graph &g, int max_iters, int world_rank, int world_size){
 
     PageRankType global_sum;
     MPI_Reduce(&local_sum, &global_sum, 1, PAGERANK_MPI_TYPE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    delete[] pr_curr;
+    delete[] pr_next;
+    delete[] end_vertices;
 
     // --- synchronization phase 2 start ---
     if(world_rank == 0){
