@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+#SBATCH --cpus-per-task=1
+#SBATCH --nodes=1
+#SBATCH --partition=slow
+#SBATCH --ntasks=4
+#SBATCH --mem=10G
+
+srun -n 4 /home/rshimaro/assignment5/page_rank_parallel --strategy 1 --nIterations 20 --inputFile /scratch/input_graphs/lj

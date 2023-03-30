@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+#SBATCH --cpus-per-task=1
+#SBATCH --nodes=1
+#SBATCH --partition=slow
+#SBATCH --ntasks=4
+#SBATCH --mem=10G
+
+srun -n 4 ./triangle_counting_parallel --strategy 1 --inputFile /scratch/input_graphs/lj
