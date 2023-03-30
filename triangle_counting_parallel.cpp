@@ -84,7 +84,7 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
   // if P is root process
   long *local_counts = NULL;
   if(world_rank == 0){
-    local_counts = (long*)malloc(sizeof(long) * world_size);
+    local_counts = new long[world_size];
   }
 
   MPI_Gather(&local_count, 1, MPI_LONG, local_counts, 1, MPI_LONG, 0, MPI_COMM_WORLD);
@@ -101,7 +101,7 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
   // --- synchronization phase end -----
   // if P is root process
   if(world_rank == 0){
-      free(local_counts);
+      delete[] local_counts;
       exec_time = exec_timer.stop();
 
       // print process statistics and other results
@@ -117,7 +117,6 @@ void triangleCountGather(Graph &g, int world_rank, int world_size){
     // print process statistics
     std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
   }
-  MPI_Finalize();
 }
 
 void triangleCountReduce(Graph &g, int world_rank, int world_size){
@@ -194,7 +193,6 @@ void triangleCountReduce(Graph &g, int world_rank, int world_size){
     // print process statistics
     std::printf("%d, %ld, %ld, %f\n", world_rank, local_edge_count, local_count, communication_time);
   }
-  MPI_Finalize();
 }
 
 
@@ -237,6 +235,8 @@ int main(int argc, char *argv[])
       default:
         break;
     }
+
+    MPI_Finalize();
 
     return 0;
 }
